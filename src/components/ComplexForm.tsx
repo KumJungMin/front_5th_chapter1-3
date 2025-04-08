@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { renderLog } from "../utils";
 import { memo } from "../@lib/hocs";
-import { useAppContext } from "../contexts";
+import { useNotificationContext } from "../contexts/notification";
 
 export const ComplexForm: React.FC = memo(() => {
   renderLog("ComplexForm rendered");
-  const { addNotification } = useAppContext();
+  
+  const { addNotification } = useNotificationContext();
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -13,27 +15,27 @@ export const ComplexForm: React.FC = memo(() => {
     preferences: [] as string[],
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     addNotification("폼이 성공적으로 제출되었습니다", "success");
-  };
+  }, [addNotification]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: name === "age" ? parseInt(value) || 0 : value,
     }));
-  };
+  }, []);
 
-  const handlePreferenceChange = (preference: string) => {
+  const handlePreferenceChange = useCallback((preference: string) => {
     setFormData((prev) => ({
       ...prev,
       preferences: prev.preferences.includes(preference)
         ? prev.preferences.filter((p) => p !== preference)
         : [...prev.preferences, preference],
     }));
-  };
+  }, []);
 
   return (
     <div className="mt-8">

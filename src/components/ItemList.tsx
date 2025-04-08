@@ -1,46 +1,58 @@
-import type { Item } from "../types";
-import { useState } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { renderLog } from "../utils";
-import { useAppContext } from "../contexts";
 import { memo } from "../@lib/hocs";
+import { useThemeContext } from "../contexts/theme";
+import { useItemsContext } from "../contexts/item";
 
-export const ItemList: React.FC<{
-  items: Item[];
-  onAddItemsClick: () => void;
-}> = memo(({ items, onAddItemsClick }) => {
+export const ItemList: React.FC = memo(() => {
   renderLog("ItemList rendered");
-  const [filter, setFilter] = useState("");
-  const { theme } = useAppContext();
 
-  const filteredItems = items.filter(
-    (item) =>
-      item.name.toLowerCase().includes(filter.toLowerCase()) ||
-      item.category.toLowerCase().includes(filter.toLowerCase()),
+  const { theme } = useThemeContext();
+  const { items, addItems } = useItemsContext();
+  const [filter, setFilter] = useState("");
+
+  const handleFilterChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => setFilter(e.target.value),
+    []
   );
 
-  const totalPrice = filteredItems.reduce((sum, item) => sum + item.price, 0);
+  const filteredItems = useMemo(
+    () =>
+      items.filter(
+        (item) =>
+          item.name.toLowerCase().includes(filter.toLowerCase()) ||
+          item.category.toLowerCase().includes(filter.toLowerCase())
+      ),
+    [filter, items]
+  );
 
-  const averagePrice = Math.round(totalPrice / filteredItems.length) || 0;
+  const totalPrice = useMemo(
+    () => filteredItems.reduce((sum, item) => sum + item.price, 0),
+    [filteredItems]
+  );
+
+  const averagePrice = useMemo(
+    () => (filteredItems.length > 0 ? Math.round(totalPrice / filteredItems.length) : 0),
+    [totalPrice, filteredItems]
+  );
 
   return (
     <div className="mt-8">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold">상품 목록</h2>
-        <div>
-          <button
-            type="button"
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-xs"
-            onClick={onAddItemsClick}
-          >
-            대량추가
-          </button>
-        </div>
+        <button
+          type="button"
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-xs"
+          onClick={addItems}
+        >
+          대량추가
+        </button>
       </div>
       <input
         type="text"
         placeholder="상품 검색..."
         value={filter}
-        onChange={(e) => setFilter(e.target.value)}
+        onChange={handleFilterChange}
         className="w-full p-2 mb-4 border border-gray-300 rounded text-black"
       />
       <ul className="mb-4 mx-4 flex gap-3 text-sm justify-end">
@@ -52,7 +64,9 @@ export const ItemList: React.FC<{
         {filteredItems.map((item, index) => (
           <li
             key={index}
-            className={`p-2 rounded shadow ${theme === "light" ? "bg-white text-black" : "bg-gray-700 text-white"}`}
+            className={`p-2 rounded shadow ${
+              theme === "light" ? "bg-white text-black" : "bg-gray-700 text-white"
+            }`}
           >
             {item.name} - {item.category} - {item.price.toLocaleString()}원
           </li>
